@@ -1,2 +1,6 @@
 edid-decode
 *.jx
+*.VC.db
+*.vcxproj.user
+Win32
+x64

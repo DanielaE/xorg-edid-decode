@@ -28,7 +28,6 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
