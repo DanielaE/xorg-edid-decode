@@ -62,6 +62,9 @@ static int seen_non_detailed_descriptor = 0;
 static int warning_excessive_dotclock_correction = 0;
 static int warning_zero_preferred_refresh = 0;
 
+static unsigned char victable[256];
+static int victable_size = 0;
+
 static int conformant = 1;
 
 struct value {
@@ -769,10 +772,12 @@ cea_svd(unsigned char *x, int n)
 	    native = svd & 0x80;
 	}
 
-	if (vic > 0 && vic <= ARRAY_SIZE(edid_cea_modes))
-	    mode = edid_cea_modes[vic - 1];
-	else
-	    mode = "Unknown mode";
+	if (vic > 0 && vic <= ARRAY_SIZE(edid_cea_modes)) {
+		mode = edid_cea_modes[vic - 1];
+		victable[victable_size++] = vic - 1;
+	} else {
+		mode = "Unknown mode";
+	}
 
 	printf("    VIC %3d %s %s\n", vic, mode, native ? "(native)" : "");
     }
@@ -792,6 +797,22 @@ cea_y420vdb(unsigned char *x)
     int length = x[0] & 0x1f;
 
     cea_svd(x + 2, length - 1);
+}
+
+static void
+cea_y420svd(unsigned char *x) {
+	printf("    Video modes supporting YCbCr 4:2:0 in addition to other color formats:\n");
+	int length = x[0] & 0x1f;
+	int index = 0;
+	for (int i = 2; i <= length; i++) {
+		for (int bit = 0x01; bit <= 0x80; bit <<= 1) {
+			if (x[i] & bit && index < victable_size) {
+				unsigned char vic = victable[index];
+				printf("      VIC %3d %s\n", vic, edid_cea_modes[vic]);
+			}
+			++index;
+		}
+	}
 }
 
 static void
@@ -1002,6 +1023,65 @@ cea_hdmi_block(unsigned char *x)
     }
 }
 
+static void
+cea_hdmi20_block(unsigned char *x)
+{
+	int length = x[0] & 0x1f;
+
+	printf(" (HDMI 2.0)\n");
+	if (length >= 4)
+		printf("    Version %d\n", x[4]);
+
+	if (x[4] == 1 && length >= 7) {
+		printf("    Maximum TMDS clock: %dMHz\n", x[5] * 5);
+		if (x[6] & 0x80)
+			printf("    SCDC present\n");
+		if (x[6] & 0x40)
+			printf("    Support SCDC read requests\n");
+		/* two reserved */
+		if ((x[6] & 0x88) == 0x88)
+			printf("    Support scrambling for <= 340MHz\n");
+		if (x[6] & 0x04)
+			printf("    Support 3D Independent view\n");
+		if (x[6] & 0x02)
+			printf("    Support 3D dual view\n");
+		if (x[6] & 0x01)
+			printf("    Support OSD disparity\n");
+		/* five reserved */
+		if (x[7] & 0x04)
+			printf("    Support 48 bits/pixel (16 bits/color) for Deep Color YCbCr 4:2:0\n");
+		if (x[7] & 0x02)
+			printf("    Support 36 bits/pixel (12 bits/color) for Deep Color YCbCr 4:2:0\n");
+		if (x[7] & 0x01)
+			printf("    Support 30 bits/pixel (10 bits/color) for Deep Color YCbCr 4:2:0\n");
+	}
+}
+
+static void
+cea_vs_unknown_block(unsigned char *x)
+{
+	int length = x[0] & 0x1f;
+
+	printf(" (unknown)\n");
+	if (length >= 4) {
+		printf("    Bytes ");
+		for (int i = 4; i <= length; i++)
+			printf("%02x", x[i]);
+		printf("\n");
+	}
+}
+
+static void
+cea_vs_video_block(unsigned char *x) {
+	int length = x[0] & 0x1f;
+	if (length >= 1) {
+		printf("    Bytes ");
+		for (int i = 1; i <= length; i++)
+			printf("%02x", x[i]);
+		printf("\n");
+	}
+}
+
 DEFINE_FIELD("YCbCr quantization", YCbCr_quantization, 7, 7,
              { 0, "No Data" },
              { 1, "Selectable (via AVI YQ)" });
@@ -1154,10 +1234,17 @@ cea_block(unsigned char *x)
 	    /* yes really, endianness lols */
 	    oui = (x[3] << 16) + (x[2] << 8) + x[1];
 	    printf("  Vendor-specific data block, OUI %06x", oui);
-	    if (oui == 0x000c03)
-		cea_hdmi_block(x);
-	    else
-		printf("\n");
+		switch (oui) {
+		case 0x000c03: /* HDMI Licencing */
+			cea_hdmi_block(x);
+			break;
+		case 0xc45dd8: /* HDMI Forum */
+			cea_hdmi20_block(x);
+			break;
+		default:
+			cea_vs_unknown_block(x);
+			break;
+		}
 	    break;
 	case 0x04:
 	    printf("  Speaker allocation data block\n");
@@ -1175,6 +1262,7 @@ cea_block(unsigned char *x)
 		    break;
 		case 0x01:
 		    printf("vendor-specific video data block\n");
+			cea_vs_video_block(x);
 		    break;
 		case 0x02:
 		    printf("VESA video display device information data block\n");
@@ -1203,7 +1291,8 @@ cea_block(unsigned char *x)
 		    break;
 		case 0x0f:
 		    printf("YCbCr 4:2:0 capability map data block\n");
-		    break;
+			cea_y420svd(x);
+			break;
 		case 0x10:
 		    printf("CEA miscellaneous audio fields\n");
 		    break;
