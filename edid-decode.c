@@ -868,24 +868,24 @@ cea_hdmi_block(unsigned char *x)
 {
     int length = x[0] & 0x1f;
 
-    printf(" (HDMI)\n");
+    printf(" (HDMI 1.4 \"HDMI Licensing, LLC\")\n");
     printf("    Source physical address %d.%d.%d.%d\n", x[4] >> 4, x[4] & 0x0f,
 	   x[5] >> 4, x[5] & 0x0f);
 
     if (length > 5) {
 	if (x[6] & 0x80)
-	    printf("    Supports_AI\n");
+	    printf("    Supports ACP, ISRC1, ISRC2\n");
 	if (x[6] & 0x40)
-	    printf("    DC_48bit\n");
+	    printf("    Supports 48 bits/pixel (16 bits/color)\n");
 	if (x[6] & 0x20)
-	    printf("    DC_36bit\n");
+	    printf("    Supports 36 bits/pixel (12 bits/color)\n");
 	if (x[6] & 0x10)
-	    printf("    DC_30bit\n");
+	    printf("    Supports 30 bits/pixel (10 bits/color)\n");
 	if (x[6] & 0x08)
-	    printf("    DC_Y444\n");
+	    printf("    Supports YCbCr 4:4:4 Deep Color\n");
 	/* two reserved */
 	if (x[6] & 0x01)
-	    printf("    DVI_Dual\n");
+	    printf("    Supports Dual-DVI\n");
     }
 
     if (length > 6)
@@ -1039,7 +1039,7 @@ cea_hdmi20_block(unsigned char *x)
 {
 	int length = x[0] & 0x1f;
 
-	printf(" (HDMI 2.0)\n");
+	printf(" (HDMI 2.0 \"HDMI Forum\")\n");
 	if (length >= 4)
 		printf("    Version %d\n", x[4]);
 
@@ -1048,23 +1048,23 @@ cea_hdmi20_block(unsigned char *x)
 		if (x[6] & 0x80)
 			printf("    SCDC present\n");
 		if (x[6] & 0x40)
-			printf("    Support SCDC read requests\n");
+			printf("    Supports SCDC read requests\n");
 		/* two reserved */
 		if ((x[6] & 0x88) == 0x88)
-			printf("    Support scrambling for <= 340MHz\n");
+			printf("    Supports scrambling for <= 340MHz\n");
 		if (x[6] & 0x04)
-			printf("    Support 3D Independent view\n");
+			printf("    Supports 3D Independent view\n");
 		if (x[6] & 0x02)
-			printf("    Support 3D dual view\n");
+			printf("    Supports 3D dual view\n");
 		if (x[6] & 0x01)
-			printf("    Support OSD disparity\n");
+			printf("    Supports OSD disparity\n");
 		/* five reserved */
 		if (x[7] & 0x04)
-			printf("    Support 48 bits/pixel (16 bits/color) for Deep Color YCbCr 4:2:0\n");
+			printf("    Supports 48 bits/pixel (16 bits/color) for Deep Color YCbCr 4:2:0\n");
 		if (x[7] & 0x02)
-			printf("    Support 36 bits/pixel (12 bits/color) for Deep Color YCbCr 4:2:0\n");
+			printf("    Supports 36 bits/pixel (12 bits/color) for Deep Color YCbCr 4:2:0\n");
 		if (x[7] & 0x01)
-			printf("    Support 30 bits/pixel (10 bits/color) for Deep Color YCbCr 4:2:0\n");
+			printf("    Supports 30 bits/pixel (10 bits/color) for Deep Color YCbCr 4:2:0\n");
 	}
 }
 
@@ -1169,11 +1169,11 @@ static const char *colorimetry_map[] = {
     "xvYCC601",
     "xvYCC709",
     "sYCC601",
-    "AdobeYCC601",
-    "AdobeRGB",
-    "BT2020cYCC",
-    "BT2020YCC",
-    "BT2020RGB",
+    "Adobe YCC601",
+    "Adobe RGB",
+    "BT2020 cYCC",
+    "BT2020 YCC",
+    "BT2020 RGB",
 };
 
 static void
@@ -1185,7 +1185,7 @@ cea_colorimetry_block(unsigned char *x)
     if (length >= 3) {
 	for (i = 0; i < ARRAY_SIZE(colorimetry_map); i++) {
 	    if (x[2] >> i)
-		printf("    %s\n", colorimetry_map[i]);
+		printf("    Supports %s\n", colorimetry_map[i]);
 	}
     }
 }
