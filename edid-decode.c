@@ -857,6 +857,7 @@ cea_vfpdb(unsigned char *x)
 }
 
 static const char *edid_cea_hdmi_modes[] = {
+    "Reserved",
     "3840x2160@30Hz",
     "3840x2160@25Hz",
     "3840x2160@24Hz",
@@ -945,7 +946,6 @@ cea_hdmi_block(unsigned char *x)
                     unsigned char vic = x[9 + b + i];
                     const char *mode;
 
-                    vic--;
                     if (vic < ARRAY_SIZE(edid_cea_hdmi_modes))
                             mode = edid_cea_hdmi_modes[vic];
                     else
