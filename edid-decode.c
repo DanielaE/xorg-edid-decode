@@ -340,7 +340,7 @@ detailed_block(unsigned char *x, int in_extension)
 	    int is_cvt = 0;
 	    has_range_descriptor = 1;
 	    char *range_class = "";
-	    /* 
+	    /*
 	     * XXX todo: implement feature flags, vtd blocks
 	     * XXX check: ranges are well-formed; block termination if no vtd
 	     */
@@ -565,7 +565,7 @@ detailed_block(unsigned char *x, int in_extension)
 	   stereo
 	  );
     /* XXX flag decode */
-    
+
     return 1;
 }
 
@@ -907,7 +907,7 @@ cea_hdmi_block(unsigned char *x)
 	    printf("    Interlaced audio latency: %d\n", x[10 + b]);
 	    b += 2;
 	}
-	
+
 	if (x[8] & 0x20) {
 	    int mask = 0, formats = 0;
 	    int len_vic, len_3d;
@@ -1083,11 +1083,26 @@ cea_vs_unknown_block(unsigned char *x)
 }
 
 static void
+cea_dolby_vision_block(unsigned char *x) {
+	int length = x[0] & 0x1f;
+
+	printf(" (Dolby Vision \"Dolby Laboratories, Inc.\")\n");
+	if (length >= 5) {
+		printf("    Bytes ");
+		for (int i = 5; i <= length; i++)
+			printf("%02x", x[i]);
+		printf("\n");
+	}
+}
+
+static void
 cea_vs_video_block(unsigned char *x) {
 	int length = x[0] & 0x1f;
-	if (length >= 1) {
+
+	printf(" (unknown)\n");
+	if (length >= 5) {
 		printf("    Bytes ");
-		for (int i = 1; i <= length; i++)
+		for (int i = 5; i <= length; i++)
 			printf("%02x", x[i]);
 		printf("\n");
 	}
@@ -1272,8 +1287,16 @@ cea_block(unsigned char *x)
 		    cea_vcdb(x);
 		    break;
 		case 0x01:
-		    printf("vendor-specific video data block\n");
-			cea_vs_video_block(x);
+			oui = (x[4] << 16) + (x[3] << 8) + x[2];
+			printf("Vendor-specific video data block, OUI %06x", oui);
+			switch (oui) {
+				case 0x00d046: /* Dolby Laboratories */
+					cea_dolby_vision_block(x);
+					break;
+				default:
+					cea_vs_video_block(x);
+					break;
+			}
 		    break;
 		case 0x02:
 		    printf("VESA video display device information data block\n");
@@ -1362,8 +1385,8 @@ parse_cea(unsigned char *x)
 		cea_block(x + i);
 	    }
 	}
-	
-	if (version >= 2) {    
+
+	if (version >= 2) {
 	    if (x[3] & 0x80)
 		printf("Underscans PC formats by default\n");
 	    if (x[3] & 0x40)
