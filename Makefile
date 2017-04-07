@@ -4,7 +4,7 @@ bindir ?= /usr/bin
 mandir ?= /usr/share/man
 
 edid-decode: edid-decode.c
-	$(CC) -g -Wall -o $@ $<
+	$(CC) -std=gnu99 -g -Wall -o $@ $<
 
 clean:
 	rm -f edid-decode
