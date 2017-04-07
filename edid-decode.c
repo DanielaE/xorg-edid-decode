@@ -28,6 +28,12 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <stdint.h>
+#ifdef _MSC_VER
+#pragma warning(disable: 4996 4244)
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
