@@ -89,6 +89,8 @@ static int has_640x480p60_est_timing = 0;
 static int has_cta861_vic_1 = 0;
 static int manufacturer_name_well_formed = 0;
 static int seen_non_detailed_descriptor = 0;
+static unsigned char victable[256];
+static int victable_size = 0;
 
 static int warning_excessive_dotclock_correction = 0;
 static int warning_zero_preferred_refresh = 0;
@@ -812,7 +814,7 @@ static int detailed_block(const unsigned char *x, int in_extension)
 			int is_cvt = 0;
 			has_range_descriptor = 1;
 			char *range_class = "";
-			/* 
+			/*
 			 * XXX todo: implement feature flags, vtd blocks
 			 * XXX check: ranges are well-formed; block termination if no vtd
 			 */
@@ -1430,7 +1432,8 @@ static void cta_svd(const unsigned char *x, int n, int for_ycbcr420)
 			max_hor_freq_hz = max(max_hor_freq_hz, hfreq);
 			clock_khz = vicmode->pixclk_khz / (for_ycbcr420 ? 2 : 1);
 			max_pixclk_khz = max(max_pixclk_khz, clock_khz);
-		} else {
+            victable[victable_size++] = vic - 1;
+        } else {
 			mode = "Unknown mode";
 		}
 
@@ -1453,16 +1456,17 @@ static void cta_y420vdb(const unsigned char *x, unsigned int length)
 
 static void cta_y420cmdb(const unsigned char *x, unsigned int length)
 {
-	int i;
-
-	for (i = 0; i < length; i++) {
-		uint8_t v = x[0 + i];
-		int j;
-
-		for (j = 0; j < 8; j++)
-			if (v & (1 << j))
-				printf("    VSD Index %d\n", i * 8 + j);
-	}
+    printf("    Video modes supporting YCbCr 4:2:0 in addition to other color formats:\n");
+    int index = 0;
+	for (unsigned int i = 0; i < length; i++) {
+        for (int bit = 0x01; bit <= 0x80; bit <<= 1) {
+            if (x[i] & bit && index < victable_size) {
+                unsigned char vic = victable[index];
+                printf("      VIC %3d %s\n", vic, edid_cta_modes1[vic].name);
+            }
+            ++index;
+        }
+    }
 }
 
 static void cta_vfpdb(const unsigned char *x, unsigned int length)
@@ -1820,6 +1824,23 @@ static void cta_hf_block(const unsigned char *x, unsigned int length)
 	if (x[12] & 0x3f)
 		printf("    Maximum number of bytes in a line of chunks: %u\n",
 		       1024 * (1 + (x[12] & 0x3f)));
+}
+
+static void cta_vs_unknown_block(const unsigned char* x, unsigned int length) {
+    printf(" (unknown)\n");
+    if (length > 3) {
+        printf("    Bytes ");
+        for (unsigned int i = 3; i < length; i++)
+            printf("%02x", x[i]);
+        printf("\n");
+    }
+}
+
+static void cta_vs_video_block(const unsigned char* x, unsigned int length) {
+        printf("    Bytes ");
+        for (unsigned int i = 0; i < length; i++)
+            printf("%02x", x[i]);
+        printf("\n");
 }
 
 DEFINE_FIELD("YCbCr quantization", YCbCr_quantization, 7, 7,
@@ -2189,17 +2210,21 @@ static void cta_block(const unsigned char *x)
 		/* yes really, endianness lols */
 		oui = (x[3] << 16) + (x[2] << 8) + x[1];
 		printf("  Vendor-specific data block, OUI %06x", oui);
-		if (oui == 0x000c03) {
-			cta_hdmi_block(x + 1, length);
-			last_block_was_hdmi_vsdb = 1;
-			return;
-		}
-		if (oui == 0xc45dd8) {
-			if (!last_block_was_hdmi_vsdb)
-				nonconformant_hf_vsdb_position = 1;
-			cta_hf_block(x + 1, length);
-		} else {
-			printf("\n");
+		switch (oui) {
+            case 0x000c03: /* HDMI Licencing */
+				cta_hdmi_block(x + 1, length);
+				last_block_was_hdmi_vsdb = 1;
+				break;
+
+            case 0xc45dd8: /* HDMI Forum */
+				if (!last_block_was_hdmi_vsdb)
+					nonconformant_hf_vsdb_position = 1;
+				cta_hf_block(x + 1, length);
+            break;
+
+            default:
+                cta_vs_unknown_block(x + 1, length);
+                break;
 		}
 		break;
 	case 0x04:
@@ -2218,6 +2243,7 @@ static void cta_block(const unsigned char *x)
 			break;
 		case 0x01:
 			printf("Vendor-specific video data block\n");
+            cta_vs_video_block(x + 2, length - 1);
 			break;
 		case 0x02:
 			printf("VESA video display device data block\n");
@@ -2320,7 +2346,7 @@ static int parse_cta(const unsigned char *x)
 			}
 		}
 
-		if (version >= 2) {    
+		if (version >= 2) {
 			if (x[3] & 0x80)
 				printf("Underscans PC formats by default\n");
 			if (x[3] & 0x40)
