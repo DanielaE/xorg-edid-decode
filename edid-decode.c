@@ -1826,6 +1826,16 @@ static void cta_hf_block(const unsigned char *x, unsigned int length)
 		       1024 * (1 + (x[12] & 0x3f)));
 }
 
+static void cta_dolby_vision_block(const unsigned char* x, unsigned int length) {
+    printf(" (Dolby Vision \"Dolby Laboratories, Inc.\")\n");
+    if (length > 3) {
+        printf("    Bytes ");
+        for (unsigned int i = 3; i < length; i++)
+            printf("%02x", x[i]);
+        printf("\n");
+    }
+}
+
 static void cta_vs_unknown_block(const unsigned char* x, unsigned int length) {
     printf(" (unknown)\n");
     if (length > 3) {
@@ -2242,8 +2252,17 @@ static void cta_block(const unsigned char *x)
 			cta_vcdb(x + 2, length - 1);
 			break;
 		case 0x01:
-			printf("Vendor-specific video data block\n");
-            cta_vs_video_block(x + 2, length - 1);
+            oui = (x[4] << 16) + (x[3] << 8) + x[2];
+            printf("Vendor-specific video data block, OUI %06x", oui);
+            switch (oui) {
+                case 0x00d046: /* Dolby Laboratories */
+                    cta_dolby_vision_block(x + 2, length - 1);
+                    break;
+
+            	default:
+                    cta_vs_video_block(x + 2, length - 1);
+                    break;
+            }
 			break;
 		case 0x02:
 			printf("VESA video display device data block\n");
