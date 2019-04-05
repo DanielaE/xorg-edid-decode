@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #ifdef _MSC_VER
-#pragma warning(disable: 4996 4244)
+#pragma warning(disable: 4996 4244 4018)
 #include <io.h>
 #else
 #include <unistd.h>
@@ -41,8 +41,12 @@
 #include <math.h>
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
+#ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
+#ifndef max
 #define max(a, b) ((a) > (b) ? (a) : (b))
+#endif
 
 enum {
 	EDID_PAGE_SIZE = 128u
