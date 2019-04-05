@@ -1513,7 +1513,7 @@ static void cta_hdmi_block(const unsigned char *x, unsigned int length)
 	int len_vic, len_3d;
 	int b = 0;
 
-	printf(" (HDMI)\n");
+	printf(" (HDMI 1.4 \"HDMI Licensing, LLC\")\n");
 	printf("    Source physical address %d.%d.%d.%d\n", x[3] >> 4, x[3] & 0x0f,
 	       x[4] >> 4, x[4] & 0x0f);
 
@@ -1521,18 +1521,18 @@ static void cta_hdmi_block(const unsigned char *x, unsigned int length)
 		return;
 
 	if (x[5] & 0x80)
-		printf("    Supports_AI\n");
+		printf("    Support ACP, ISRC1, ISRC2\n");
 	if (x[5] & 0x40)
-		printf("    DC_48bit\n");
+		printf("    Support 16 bits/component Deep Color\n");
 	if (x[5] & 0x20)
-		printf("    DC_36bit\n");
+		printf("    Support 12 bits/component Deep Color\n");
 	if (x[5] & 0x10)
-		printf("    DC_30bit\n");
+		printf("    Support 10 bits/component Deep Color\n");
 	if (x[5] & 0x08)
-		printf("    DC_Y444\n");
+		printf("    Support YCbCr 4:4:4 Deep Color\n");
 	/* two reserved */
 	if (x[5] & 0x01)
-		printf("    DVI_Dual\n");
+		printf("    Support Dual-DVI\n");
 
 	if (length < 7)
 		return;
@@ -1728,7 +1728,7 @@ static void cta_hf_block(const unsigned char *x, unsigned int length)
 {
 	unsigned rate = x[4] * 5;
 
-	printf(" (HDMI Forum)\n");
+	printf(" (HDMI 2.0 \"HDMI Forum\")\n");
 	printf("    Version: %u\n", x[3]);
 	if (rate) {
 		printf("    Maximum TMDS Character Rate: %uMHz\n", rate);
@@ -2012,11 +2012,11 @@ static const char *colorimetry_map[] = {
 	"xvYCC601",
 	"xvYCC709",
 	"sYCC601",
-	"opYCC601",
-	"opRGB",
-	"BT2020cYCC",
-	"BT2020YCC",
-	"BT2020RGB",
+	"op YCC601",
+	"op RGB",
+	"BT2020 cYCC",
+	"BT2020 YCC",
+	"BT2020 RGB",
 };
 
 static void cta_colorimetry_block(const unsigned char *x, unsigned int length)
@@ -2026,12 +2026,12 @@ static void cta_colorimetry_block(const unsigned char *x, unsigned int length)
 	if (length >= 2) {
 		for (i = 0; i < ARRAY_SIZE(colorimetry_map); i++) {
 			if (x[0] & (1 << i))
-				printf("    %s\n", colorimetry_map[i]);
+				printf("    Support %s\n", colorimetry_map[i]);
 		}
 		if (x[1] & 0x80)
-			printf("    DCI-P3\n");
+			printf("    Support DCI-P3\n");
 		if (x[1] & 0x40)
-			printf("    ICtCp\n");
+			printf("    Support ICtCp\n");
 	}
 }
 
