@@ -1834,31 +1834,33 @@ static void cta_hf_block(const unsigned char *x, unsigned int length)
 		       1024 * (1 + (x[12] & 0x3f)));
 }
 
-static void cta_dolby_vision_block(const unsigned char* x, unsigned int length) {
-    printf(" (Dolby Vision \"Dolby Laboratories, Inc.\")\n");
-    if (length > 3) {
-        printf("    Bytes ");
-        for (unsigned int i = 3; i < length; i++)
-            printf("%02x", x[i]);
-        printf("\n");
-    }
-}
 
-static void cta_vs_unknown_block(const unsigned char* x, unsigned int length) {
-    printf(" (unknown)\n");
-    if (length > 3) {
-        printf("    Bytes ");
-        for (unsigned int i = 3; i < length; i++)
-            printf("%02x", x[i]);
-        printf("\n");
-    }
-}
-
-static void cta_vs_video_block(const unsigned char* x, unsigned int length) {
+static void cta_vs_data_block(const unsigned char* x, unsigned int length) {
+    if (length > 0) {
         printf("    Bytes ");
         for (unsigned int i = 0; i < length; i++)
             printf("%02x", x[i]);
         printf("\n");
+    }
+}
+
+static void cta_hdr10_plus_block(const unsigned char* x, unsigned int length) {
+    printf(" (HDR10+ \"HDR10+ Technologies, LLC\")\n");
+    cta_vs_data_block(x, length);
+}
+
+static void cta_dolby_vision_block(const unsigned char* x, unsigned int length) {
+    printf(" (Dolby Vision \"Dolby Laboratories, Inc.\")\n");
+    cta_vs_data_block(x, length);
+}
+
+static void cta_vs_unknown_block(const unsigned char* x, unsigned int length) {
+    printf(" (unknown)\n");
+    cta_vs_data_block(x, length);
+}
+
+static void cta_vs_video_block(const unsigned char* x, unsigned int length) {
+    cta_vs_data_block(x, length);
 }
 
 DEFINE_FIELD("YCbCr quantization", YCbCr_quantization, 7, 7,
@@ -2264,11 +2266,15 @@ static void cta_block(const unsigned char *x)
             printf("Vendor-specific video data block, OUI %06x", oui);
             switch (oui) {
                 case 0x00d046: /* Dolby Laboratories */
-                    cta_dolby_vision_block(x + 2, length - 1);
+                    cta_dolby_vision_block(x + 5, length - 4);
                     break;
 
-            	default:
-                    cta_vs_video_block(x + 2, length - 1);
+                case 0x90848B : /* HDR10+ Technologies, LLC */
+                    cta_hdr10_plus_block(x + 5, length - 4);
+                    break;
+
+                default:
+                    cta_vs_video_block(x + 5, length - 4);
                     break;
             }
 			break;
