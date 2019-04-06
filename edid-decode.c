@@ -2573,6 +2573,9 @@ static unsigned char *extract_edid(int fd)
 	if (ret == NULL)
 		return NULL;
 
+#ifdef _MSC_VER
+    setmode(fd, _O_BINARY);
+#endif
 	for (;;) {
 		i = read(fd, ret + len, size - len);
 		if (i < 0) {
@@ -3085,7 +3088,7 @@ static int edid_from_file(const char *from_file, const char *to_file,
 		printf("\n");
 	}
 
-	if (analog || !claims_one_point_four) {
+	if (analog || !claims_one_point_three) {
 		switch (edid[0x18] & 0x18) {
 		case 0x00: printf("Monochrome or grayscale display\n"); break;
 		case 0x08: printf("RGB color display\n"); break;
