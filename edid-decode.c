@@ -1112,7 +1112,7 @@ static const char *audio_format(unsigned char x)
 	case 9: return "One Bit Audio";
 	case 10: return "Dolby Digital+";
 	case 11: return "DTS-HD";
-	case 12: return "MAT (MLP)";
+	case 12: return "MAT (MLP/Dolby TrueHD)";
 	case 13: return "DST";
 	case 14: return "WMA Pro";
 	case 15: return "RESERVED";
@@ -1176,7 +1176,15 @@ static void cta_audio_block(const unsigned char *x, unsigned int length)
 			       (x[i+2] & 0x01) ? " 16" : "");
 		} else if (format <= 8) {
 			printf("      Maximum bit rate: %d kb/s\n", x[i+2] * 8);
-		} else if (format == 14) {
+        } else if (format <= 13) {
+            int code = x[i + 2];
+            if (format == 10 && (code & 1)) {
+                code &= ~1;
+                printf("      Supports Dolby Atmos\n");
+            }
+            if (code > 0)
+                printf("      Code: %d\n", code);
+        } else if (format == 14) {
 			printf("      Profile: %d\n", x[i+2] & 7);
 		} else if (ext_format == 11 && (x[i+2] & 1)) {
 			printf("      Supports MPEG-H 3D Audio Low Complexity Profile\n");
