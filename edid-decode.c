@@ -1177,12 +1177,24 @@ static void cta_audio_block(const unsigned char *x, unsigned int length)
 		} else if (format <= 8) {
 			printf("      Maximum bit rate: %d kb/s\n", x[i+2] * 8);
         } else if (format <= 13) {
-            int code = x[i + 2];
-            if (format == 10 && (code & 1)) {
-                code &= ~1;
-                printf("      Supports Dolby Atmos\n");
+            const int code = x[i + 2];
+            int undecoded = code;
+            if ((format == 10 || format == 12)) {
+                if (code & 1) {
+                    undecoded &= ~1;
+                    printf("      Supports Audio Objects (Dolby Atmos)\n");
+                }
+            } else if (format == 11) {
+                if (code & 1) {
+                    undecoded &= ~1;
+                    printf("      Supports High Bitrate (DTS-HD Master Audio)\n");
+                }
+                if (code & 2) {
+                    undecoded &= ~2;
+                    printf("      Supports Audio Objects (DTS:X)\n");
+                }
             }
-            if (code > 0)
+            if (undecoded > 0)
                 printf("      Code: %d\n", code);
         } else if (format == 14) {
 			printf("      Profile: %d\n", x[i+2] & 7);
