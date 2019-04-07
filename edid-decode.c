@@ -1109,7 +1109,7 @@ static const char *audio_format(unsigned char x)
 	case 6: return "AAC";
 	case 7: return "DTS";
 	case 8: return "ATRAC";
-	case 9: return "One Bit Audio";
+	case 9: return "One Bit Audio (SACD)";
 	case 10: return "Dolby Digital+";
 	case 11: return "DTS-HD";
 	case 12: return "MAT (MLP/Dolby TrueHD)";
@@ -2029,14 +2029,14 @@ static void cta_vcdb(const unsigned char *x, unsigned int length)
 }
 
 static const char *colorimetry_map[] = {
-	"xvYCC601",
-	"xvYCC709",
-	"sYCC601",
-	"op YCC601",
-	"op RGB",
-	"BT2020 cYCC",
-	"BT2020 YCC",
-	"BT2020 RGB",
+	"xvYCC601 (Extended-gamut Standard Definition Colorimetry based on IEC 61966-2-4)",
+	"xvYCC709 (Extended-gamut High Definition Colorimetry based on IEC 61966-2-4)",
+	"sYCC601 (sRGB, Colorimetry based on IEC 61966-2-1/Amendment 1)",
+	"opYCC601 (AdobeRGB, Colorimetry based on IEC 61966-2-5, Annex A)",
+	"opRGB (AdobeRGB, Colorimetry based on IEC 61966-2-5)",
+	"BT.2020 cYCC (Colorimetry based on ITU-R BT.2020 YcCbcCrc)",
+	"BT.2020 YCC (Colorimetry based on ITU-R BT.2020 YCbCr)",
+	"BT.2020 RGB (Colorimetry based on ITU-R BT.2020 RGB)",
 };
 
 static void cta_colorimetry_block(const unsigned char *x, unsigned int length)
@@ -2058,8 +2058,8 @@ static void cta_colorimetry_block(const unsigned char *x, unsigned int length)
 static const char *eotf_map[] = {
 	"Traditional gamma - SDR luminance range",
 	"Traditional gamma - HDR luminance range",
-	"SMPTE ST2084",
-	"Hybrid Log-Gamma",
+	"Perceptual Quantizer (PQ) SMPTE ST.2084",
+	"Hybrid Log-Gamma (HLG)",
 };
 
 static void cta_hdr_static_metadata_block(const unsigned char *x, unsigned int length)
