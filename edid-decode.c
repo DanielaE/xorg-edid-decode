@@ -1477,9 +1477,10 @@ static void cta_y420vdb(const unsigned char *x, unsigned int length)
 static void cta_y420cmdb(const unsigned char *x, unsigned int length)
 {
     printf("    Video modes supporting YCbCr 4:2:0 in addition to other color formats:\n");
-    int index = 0;
-	for (unsigned int i = 0; i < length; i++) {
-        for (int bit = 0x01; bit <= 0x80; bit <<= 1) {
+    int bit, index = 0;
+    unsigned int i;
+    for (i = 0; i < length; i++) {
+        for (bit = 0x01; bit <= 0x80; bit <<= 1) {
             if (x[i] & bit && index < victable_size) {
                 unsigned char vic = victable[index];
                 printf("      VIC %3d %s\n", vic, edid_cta_modes1[vic].name);
@@ -1850,7 +1851,8 @@ static void cta_hf_block(const unsigned char *x, unsigned int length)
 static void cta_vs_data_block(const unsigned char* x, unsigned int length) {
     if (length > 0) {
         printf("    Bytes ");
-        for (unsigned int i = 0; i < length; i++)
+        unsigned int i;
+        for (i = 0; i < length; i++)
             printf("%02x", x[i]);
         printf("\n");
     }
